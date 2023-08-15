@@ -379,12 +379,15 @@ res.status(500).json(err);
 // Register user
 app.post('/signup/new',  async (req, res)=> {
   try {
-      const telnumber = req.body.telnumber;
+      const firstName = req.body.firstname;
+      const lastName = req.body.surname;
+      const email = req.body.email
+      const telnumber = req.body.phone_number;
       const passwordraw = req.body.password;
       
       // validation
   
-      if ( !telnumber || !passwordraw )
+      if ( !telnumber || !passwordraw || !email || !firstName || !lastName )
         return res
           .status(400)
           .json({ errorMessage: "Please enter all required fields." });
@@ -412,6 +415,9 @@ app.post('/signup/new',  async (req, res)=> {
   
       const newUser = new User({
         unique_id,
+        firstName,
+        lastName,
+        email,
         telnumber,
         password,
       });
@@ -642,6 +648,18 @@ app.get("/logout", (req, res) => {
     } catch (err) {
       res.status(500).json(err);
     }
+  });
+
+  app.get('/search-suggestions', async (req, res) => {
+    const term = req.query.term;
+    // const suggestions = await NewProductModel.find({ name: new RegExp(term, 'i') }).limit(10);
+    const suggestions = await NewProductModel.find({$or: [
+      { productName: new RegExp(term, 'i')},
+      { brandName: new RegExp(term, 'i')},
+      { category: new RegExp(term, 'i')},
+      { subCategory: {$all: [ new RegExp(term, 'i') ]}}
+    ]})
+    res.json(suggestions);
   });
 
 
