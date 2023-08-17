@@ -16,6 +16,7 @@ import ShippingDetails from "./ShippingDetails.js"
 import ItemSizeModel from "./ItemSizeModel.js";
 import NewProductModel from "./NewProductModel.js";
 import https from 'https';
+import Billing from "./Billing.js";
 
 
 dotenv.config();
@@ -37,7 +38,7 @@ const storage = multer.diskStorage({
 //  middlewares
 app.use(express.json());
 app.use(cors({
-    origin: ["https://caspianshops.netlify.app"],
+    origin: ["http://localhost:3000"],
     credentials: true
 }));
 
@@ -176,6 +177,52 @@ app.post("/product/new", upload.single("profileImg"), async (req, res)=>{
       }
   });
 
+  app.post("/billing/new", async (req, res)=>{
+    try {
+        const firstName = req.body.firstName;
+        const lastName = req.body.lastName;
+        const address = req.body.address;
+        const phone = req.body.phone;
+        const region = req.body.region;
+        const city = req.body.city;
+        const addressdiscription = req.body.addresscity;
+        const email = req.body.email;
+        
+        // validation
+    
+        if ( !firstName || !lastName || !address || !region || !city || !phone || !email)
+          return res
+            .status(400)
+            .json({ errorMessage: "Please enter all required fields." });
+    
+        // save a new product to the db
+    
+        const newShippingDetails = new Billing({
+          firstName,
+          lastName,
+          email,
+          address,
+          city,
+          phone,
+          addressdiscription,
+          region
+        });
+
+        ShippingDetails.create(newShippingDetails, (err, data)=>{
+             if(err){
+                 res.status(500).send(err);
+             }else{
+                 res.status(201).send(data);
+             }
+        });
+
+        
+      } catch (err) {
+        console.error(err);
+        res.status(500).send();
+      }
+  });
+
 
    app.post("/regiontowns/new", async (req, res)=>{
      try {
@@ -232,7 +279,8 @@ app.get('/products/:id', async (req, res) => {
 app.get('/api/:categoryitem', async (req, res) => {
 
   try {
-    const catitem = await ProductDto.find({ category: req.params.categoryitem }).limit(12);
+    const catitem = await ProductDto.find({$or: [ {category: req.params.categoryitem}, 
+      {subCategory: {$all: [req.params.categoryitem]} }]}).limit(12);
     res.status(200).json(catitem);
   } catch (err) {
     res.status(500).json(err);
@@ -254,6 +302,7 @@ app.get('/genericproducts', async (req, res) => {
     res.status(500).json(err);
   }
 });
+
 
 
 app.get('/searchproducts/:searchParam', async (req, res) => {
@@ -658,10 +707,8 @@ app.get("/logout", (req, res) => {
       { brandName: new RegExp(term, 'i')},
       { category: new RegExp(term, 'i')},
       { subCategory: {$all: [ new RegExp(term, 'i') ]}}
-    ]})
+    ]}).limit(10)
     res.json(suggestions);
   });
 
-
-
-app.listen(port, () => console.log(`Listening on lacalhost:${port}`));
+  app.listen(port, () => console.log(`Listening on lacalhost:${port}`));
