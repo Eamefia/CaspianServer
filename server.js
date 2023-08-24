@@ -17,6 +17,9 @@ import ItemSizeModel from "./ItemSizeModel.js";
 import NewProductModel from "./NewProductModel.js";
 import https from 'https';
 import Billing from "./Billing.js";
+import Categories from "./Mockdata.js";
+import OrderDetails from "./OrderDetails.js";
+import nodemailer from "nodemailer";
 
 
 dotenv.config();
@@ -38,7 +41,8 @@ const storage = multer.diskStorage({
 //  middlewares
 app.use(express.json());
 app.use(cors({
-    origin: ["http://localhost:3000", "https://caspianshops.netlify.app"],
+    // origin: ["http://localhost:3000"],
+    origin: ['http://192.168.43.42:3000', "http://localhost:3000"],
     credentials: true
 }));
 
@@ -55,7 +59,8 @@ app.get('/', (req, res) =>res.status(200).send('hello world'));
 //     useUnifiedTopology: true,
 // });
 
-const uri = "mongodb+srv://emmanuelamefia:bdDQaXp8wyGjRsZx@caspianoutlets.ruzdftq.mongodb.net/?retryWrites=true/";
+//const uri = "mongodb+srv://emmanuelamefia:bdDQaXp8wyGjRsZx@caspianoutlets.ruzdftq.mongodb.net/?retryWrites=true/";
+const uri = process.env.ConnectionString2;
 
 async function connect() {
   try {
@@ -286,6 +291,7 @@ app.get('/api/:categoryitem', async (req, res) => {
     res.status(500).json(err);
   }
 });
+
 
 app.get('/genericproducts', async (req, res) => {
 
@@ -584,9 +590,7 @@ app.get("/logout", (req, res) => {
   });
 
   app.post("/itemSizes/new", (req, res) => {
-
     try {
-
         const itemsize = "MediumItems";
         const itemsizelookups = ["Metals","Roofing Sheets","Plywood","Iron Rod","Cylinders","Fufu Machines",
         "Microwaves","Rice Cookers","Ovens","Gas Burners",
@@ -699,6 +703,7 @@ app.get("/logout", (req, res) => {
     }
   });
 
+
   app.get('/search-suggestions', async (req, res) => {
     const term = req.query.term;
     // const suggestions = await NewProductModel.find({ name: new RegExp(term, 'i') }).limit(10);
@@ -709,6 +714,82 @@ app.get("/logout", (req, res) => {
       { subCategory: {$all: [ new RegExp(term, 'i') ]}}
     ]}).limit(10)
     res.json(suggestions);
+  });
+
+
+  app.post("/categorylookups/new", (req, res) => {
+    try {
+          const categr = Categories
+          CategoryLookUpModel.insertMany(Categories, (err, data)=>{
+               if(err){
+                   res.status(500).send(err);
+               }else{
+                res.status(201).send(data);
+               }
+          });
+       } catch (err) {
+         console.error(err);
+         res.status(500).send();
+       }
+  });
+
+  app.post("/orders/new", async (req, res)=>{
+    try {
+        const name = req.body.name;
+        const email = req.body.email;
+        const paymentchanel = req.body.paymentchanel;
+        const phone = req.body.phone;
+        const order = {
+          id : req.body.order.id, 
+          order_items : req.body.order.orderitems
+        }
+        
+        // save a new product to the db
+    
+        const newOrder = new OrderDetails({
+          name,
+          email,
+          phone,
+          paymentchanel,
+          order,
+        });
+
+        const transporter = nodemailer.createTransport({
+          service: 'gmail',
+          secure: true,
+          auth: {
+              user: 'nanayawamefia98@gmail.com',
+              pass: 'fauyaispedkdowri'
+          }
+      })
+      
+      
+      
+      const message = {
+          from: 'Caspianoutlets <noreply.nanayawamefia98@gmail.com>',
+          subject: 'Order receipt',
+          to: email,
+          text: "<b>Hello world?</b>"
+      }
+
+        OrderDetails.create(newOrder, (err, data)=>{
+             if(err){
+                 res.status(500).send(err);
+             }else{
+              transporter.sendMail(message, (err, info)=>{
+                if (err){
+                    console.log(err);
+                }
+            })
+                 res.status(201).send(data);
+             }
+        });
+
+        
+      } catch (err) {
+        console.error(err);
+        res.status(500).send();
+      }
   });
 
   app.listen(port, () => console.log(`Listening on lacalhost:${port}`));
