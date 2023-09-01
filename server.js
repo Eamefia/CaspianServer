@@ -883,7 +883,7 @@ app.get("/logout", (req, res) => {
        const message = {
            from: 'Caspianoutlets <noreply.nanayawamefia98@gmail.com>',
            subject: 'Order receipt',
-           to: 'nanayawamefia98@gmail.com',
+           to: email,
            html: html(basket, data, totalPrice)
        }
  
