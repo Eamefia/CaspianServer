@@ -86,7 +86,7 @@
 </div> */}
 
 
-const HTML=(basket, addressdata)=>{
+const HTML=(basket, addressdata, totalPrice, deliveryfee)=>{
     return `
     <!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Transitional //EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
     <html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
@@ -258,7 +258,7 @@ const HTML=(basket, addressdata)=>{
     </table></div></div></div></td></tr><tr><td style="padding:0"><div style="padding-top:4px;padding-bottom:4px;padding-right:4px;padding-left:4px;margin-bottom:0;margin-top:0;margin-right:0;margin-left:0"><div style="width:100%"><div><div style="border: 1px solid gray;">
     <div style="display:flex; width:100%; padding:8px 8px 8px 4px">
     <p style="margin:0; font-weight:bold; width:90%">DELIVERY FEES</p>
-    <p style="margin:0; color:gray">${0}</p>
+    <p style="margin:0; color:gray">${deliveryfee}</p>
     </div>
     <div style="display:flex; width:100%; padding:8px 8px 8px 4px">
     <p style="margin:0; font-weight:bold; width:90%">DISCOUNT ON DELIVERY</p>
@@ -270,15 +270,15 @@ const HTML=(basket, addressdata)=>{
     </div>
     <div style="display:flex; width:100%; padding:8px 8px 8px 4px">
     <p style="margin:0; font-weight:bold; width:90%">TOTAL</p>
-    <p style="margin:0; color:gray">${0}</p>
+    <p style="margin:0; color:gray">${totalPrice}</p>
     </div>
     <div style="display:flex; width:100%; padding:8px 8px 8px 4px">
     <p style="margin:0; font-weight:bold; width:90%">PAYMENT METHOD</p>
-    <p style="margin:0; color:gray">${0}</p>
+    <p style="margin:0; color:gray">Online Payment</p>
     </div>
     </div></div></div></div></td></tr><tr><td style="padding:0"><div style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:6px;margin-bottom:0;margin-top:0;margin-right:0;margin-left:0"><div style="width:100%"><div><p style="margin-top:4px">If you would like to know more, please visit our Help Center.</p>
     
-    <p style="margin-top:4px">Please don’t forget to thank your Jumia delivery agent, who is keeping you safe at home! You can also encourage them through our Facebook page using the #jumiaheroes flag. Stay safe & stay healthy.</p>
+    <p style="margin-top:4px">Please don’t forget to thank your Caspian delivery agent, who is keeping you safe at home! You can also encourage them through our Facebook page using the #caspian flag. Stay safe & stay healthy.</p>
     
     <p style="margin-top:4px">Happy Shopping!</p>
     

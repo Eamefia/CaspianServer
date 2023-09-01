@@ -848,6 +848,7 @@ app.get("/logout", (req, res) => {
       const basket = details[1];
       const data = details[2];
       const totalPrice = details[3];
+      const deliveryfee = details[4];
       
       const name = orders.name;
       const email = orders.email;
@@ -883,7 +884,7 @@ app.get("/logout", (req, res) => {
            from: 'Caspianoutlets <noreply.nanayawamefia98@gmail.com>',
            subject: 'Order receipt',
            to: email,
-           html: html(basket, data, totalPrice)
+           html: html(basket, data, totalPrice, deliveryfee)
        }
  
          OrderDetails.create(newOrder, (err, data)=>{
