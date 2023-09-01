@@ -848,7 +848,7 @@ app.get("/logout", (req, res) => {
       const basket = details[1];
       const data = details[2];
       const totalPrice = details[3];
-      const deliveryfee = details[4];
+      const deliveryfee = details[4].toFixed(2);
       
       const name = orders.name;
       const email = orders.email;
