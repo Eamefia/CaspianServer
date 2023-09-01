@@ -43,8 +43,7 @@ const storage = multer.diskStorage({
 //  middlewares
 app.use(express.json());
 app.use(cors({
-    // origin: ["http://localhost:3000"],
-    origin: ['https://caspianshops.netlify.app', "http://localhost:3000"],
+    origin: ["https://caspianshops.netlify.app" , "http://localhost:3000"],
     credentials: true
 }));
 
