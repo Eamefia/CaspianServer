@@ -20,7 +20,9 @@ import Billing from "./Billing.js";
 import Categories from "./Mockdata.js";
 import OrderDetails from "./OrderDetails.js";
 import nodemailer from "nodemailer";
-
+import ItemSizeMockdata from "./ItemSizeMockdata.js";
+import feedbackModel from "./models/feedbackModel.js";
+import html from "./html.js";
 
 dotenv.config();
 const app = express();
@@ -42,7 +44,7 @@ const storage = multer.diskStorage({
 app.use(express.json());
 app.use(cors({
     // origin: ["http://localhost:3000"],
-    origin: ['https://caspianshops.netlify.app', "http://localhost:3000"],
+    origin: ['http://192.168.43.42:3000', "http://localhost:3000"],
     credentials: true
 }));
 
@@ -60,7 +62,8 @@ app.get('/', (req, res) =>res.status(200).send('hello world'));
 // });
 
 //const uri = "mongodb+srv://emmanuelamefia:bdDQaXp8wyGjRsZx@caspianoutlets.ruzdftq.mongodb.net/?retryWrites=true/";
-const uri = process.env.ConnectionString2;
+const uri = process.env.ConnectionString3;
+//const uri = "mongodb+srv://emmanuelamefia:bdDQaXp8wyGjRsZx@caspianoutlets.ruzdftq.mongodb.net/?retryWrites=true/";
 
 async function connect() {
   try {
@@ -82,14 +85,17 @@ connect();
  
 // });
 
+
 app.post("/product/new", upload.single("profileImg"), async (req, res)=>{
     try {
         const productName = req.body.productName;
         const regularPrice = req.body.regularPrice;
         const salePrice = req.body.salePrice;
         const brandName = req.body.brandName;
+        const itemsize = req.body.itemsize;
         const category = req.body.category;
-        const subCategory = req.body.subCategory.split(',');
+        // const subCategory = req.body.subCategory.split(',');
+        const subCategory = req.body.subCategory;
         const discription = req.body.discription;
         const fileName = req.file.filename;
         
@@ -108,6 +114,8 @@ app.post("/product/new", upload.single("profileImg"), async (req, res)=>{
           salePrice,
           brandName,
           category,
+          itemsize,
+          itemsize,
           subCategory,
           discription,
           fileName,
@@ -116,7 +124,7 @@ app.post("/product/new", upload.single("profileImg"), async (req, res)=>{
          ProductDto.create(newProduct, (err, data)=>{
              if(err){
                  res.status(500).send(err);
-             }else{
+             }else{ 
                  res.status(201).send(data);
              }
         });
@@ -232,19 +240,19 @@ app.post("/product/new", upload.single("profileImg"), async (req, res)=>{
    app.post("/regiontowns/new", async (req, res)=>{
      try {
       
-      const region = "Western North";
-      const townLookUps = {"Bibiani": 20}
+      // const region = "Western North";
+      // const townLookUps = {"Bibiani": 20}
 
-         // validatio
+      //    // validatio
     
-         // save a new product to the db
+      //    // save a new product to the db
     
-         const newCategory = new RegionsTowns({
-           region,
-           townLookUps
-         });
+      //    const newCategory = new RegionsTowns({
+      //      region,
+      //      townLookUps
+      //    });
 
-         RegionsTowns.create(newCategory, (err, data)=>{
+         RegionsTowns.insertMany(Locationdata, (err, data)=>{
               if(err){
                   res.status(500).send(err);
               }else{
@@ -282,21 +290,63 @@ app.get('/products/:id', async (req, res) => {
 });
 
 app.get('/api/:categoryitem', async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
 
   try {
     const catitem = await ProductDto.find({$or: [ {category: req.params.categoryitem}, 
-      {subCategory: {$all: [req.params.categoryitem]} }]}).limit(12);
+      {subCategory: req.params.categoryitem }]}).skip((page - 1) * limit).limit(limit);
+    const total = await ProductDto.countDocuments({$or: [ {category: req.params.categoryitem}, 
+      {subCategory: req.params.categoryitem }]});
+      res.status(200).json({catitem, totalPages: Math.ceil(total / limit), currentPage:page});
+  } catch (err) {
+    res.status(500).json(err);
+  }
+});
+
+app.get('/api/category/:categoryitem', async (req, res) => {
+
+  try {
+    const existingdata = {}
+    const arr = []
+    const catitem = await ProductDto.find({$or: [ {category: req.params.categoryitem}, 
+      {subCategory: req.params.categoryitem }]});
+
+      for (let i = 0; i < catitem.length; i++) {
+        if (catitem[i].subCategory in existingdata) {
+          
+        }else{
+          if (arr.length<4){
+            existingdata[catitem[i].subCategory] = true;
+            arr.push(catitem[i])
+          }
+        }
+        
+      }
+
+    //const catitems = await ProductDto.find({$where:[{category:req.params.categoryitem}]})
+    res.status(200).json(arr);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+});
+
+app.get('/api/categories/:categoryitem', async (req, res) => {
+
+  try {
+    const catitem = await ProductDto.find({$or: [ {category: req.params.categoryitem}, 
+      {subCategory: req.params.categoryitem }]});
+
     res.status(200).json(catitem);
   } catch (err) {
     res.status(500).json(err);
   }
 });
 
-
 app.get('/genericproducts', async (req, res) => {
 
   try {
-    await ProductDto.find({ subCategory: {$all: [ 'Home Appliances']}}, (error, data) => {
+    await ProductDto.find({ subCategory: 'Home Appliances'}, (error, data) => {
       if (error) {
         res.status(400).json(error);
       } else {
@@ -320,7 +370,7 @@ app.get('/searchproducts/:searchParam', async (req, res) => {
     if (serachprod.length !== 0) {
       res.status(200).json(serachprod);
     } else {
-      const subSerach= await ProductDto.find({ subCategory: {$all: [ req.params.searchParam ]}});
+      const subSerach= await ProductDto.find({ subCategory: req.params.searchParam});
       res.status(200).json(subSerach);
     }  
     
@@ -332,7 +382,43 @@ app.get('/searchproducts/:searchParam', async (req, res) => {
 app.get('/lowestprice', async (req, res) => {
   let prodarr = [];
   try {
-    await ProductDto.find({ }, (error, data) => {
+    await ProductDto.find({subCategory: "Home Appliances" }, (error, data) => {
+      if (error) {
+        res.status(400).json(error);
+      } else {
+          for (let i = 0; i < data.length; i++) {
+            if (parseFloat((data[i].regularPrice).replace(/,/g, '')) < 500.00 && prodarr.length != 4) {
+              prodarr.push(data[i])
+            }
+          }
+          // res.status(200).json(prodarr);
+      }
+    }).limit(2);
+    await ProductDto.find({subCategory: "Televisions" }, (error, data) => {
+      if (error) {
+        res.status(400).json(error);
+      } else {
+          for (let i = 0; i < data.length; i++) {
+            if (parseFloat((data[i].regularPrice).replace(/,/g, '')) < 1500.00 && prodarr.length != 4) {
+              prodarr.push(data[i])
+            }
+          }
+          // res.status(200).json(prodarr);
+      }
+    }).limit(1);
+    await ProductDto.find({subCategory: "Audio & Music Equipments" }, (error, data) => {
+      if (error) {
+        res.status(400).json(error);
+      } else {
+          for (let i = 0; i < data.length; i++) {
+            if (parseFloat((data[i].regularPrice).replace(/,/g, '')) < 2500.00 && prodarr.length != 4) {
+              prodarr.push(data[i])
+            }
+          }
+          // res.status(200).json(prodarr);
+      }
+    }).limit(1);
+    await ProductDto.find({subCategory: "Carpentry Materials" }, (error, data) => {
       if (error) {
         res.status(400).json(error);
       } else {
@@ -343,7 +429,7 @@ app.get('/lowestprice', async (req, res) => {
           }
           res.status(200).json(prodarr);
       }
-    });
+    }).limit(1);
     
   } catch (err) {
     res.status(500).json(err);
@@ -354,37 +440,45 @@ app.get('/chainedproducts/:queryone/:querytwo/:querythree/:queryfour', async (re
   let productItem = [];
   
   try {
-    await ProductDto.findOne({ subCategory: {$all: [ req.params.queryone ]}}, (error, data) => {
+    await ProductDto.find({ subCategory: req.params.queryone}, (error, data) => {
       if (error) {
         res.status(400).json(error);
       } else {
         // res.status(200).json(data);
-        productItem.push(data)
+        for (let i = 0; i < data.length; i++) {
+          productItem.push(data[i])
+        }
       }
-    });
-    await ProductDto.findOne({ subCategory: {$all: [ req.params.querytwo ]}}, (error, data) => {
+    }).limit(4)
+    await ProductDto.find({ subCategory: req.params.querytwo}, (error, data) => {
       if (error) {
         res.status(400).json(error);
       } else {
-        productItem.push(data)
+        for (let i = 0; i < data.length; i++) {
+          productItem.push(data[i])
+        }
       }
-    })
-    await ProductDto.findOne({ subCategory: {$all: [ req.params.querythree ]}}, (error, data) => {
+    }).limit(4)
+    await ProductDto.find({ subCategory: req.params.querythree}, (error, data) => {
       if (error) {
         res.status(400).json(error);
       } else {
-        productItem.push(data)
+        for (let i = 0; i < data.length; i++) {
+          productItem.push(data[i])
+        }
       }
-    })
-    await ProductDto.findOne({ subCategory: {$all: [ req.params.queryfour ]}}, (error, data) => {
+    }).limit(4)
+    await ProductDto.find({ subCategory: req.params.queryfour}, (error, data) => {
       if (error) {
         res.status(400).json(error);
       } else {
-        productItem.push(data)
+        for (let i = 0; i < data.length; i++) {
+          productItem.push(data[i])
+        }
         res.status(200).json(productItem);
         return;
       }
-    })
+    }).limit(4)
     
   } catch (err) {
     res.status(500).json(err);
@@ -663,133 +757,176 @@ app.get("/logout", (req, res) => {
 
         
        } catch (err) {
-         console.error(err);
-         res.status(500).send();
-       }
-  });
-
-
-  app.get("/verifypayment/:ref", async (req, response) => {
-    try {
-      const options = {
-        hostname: 'api.paystack.co',
-        port: 443,
-        path: `/transaction/verify/${req.params.ref}`,
-        method: 'GET',
-        headers: {
-          Authorization: 'Bearer sk_test_da294b7771bace620ec64176e31f2193d3e89b96'
+         console.errorres.status(500).send();
         }
+   });
+ 
+ 
+   app.get("/verifypayment/:ref", async (req, response) => {
+     try {
+       const options = {
+         hostname: 'api.paystack.co',
+         port: 443,
+         path: `/transaction/verify/${req.params.ref}`,
+         method: 'GET',
+         headers: {
+           Authorization: 'Bearer sk_test_da294b7771bace620ec64176e31f2193d3e89b96'
+         }
+       }
+ 
+       let data = ''
+       var reqt = https.request(options, res => {
+         
+       
+         res.on('data', (chunk) => {
+           data += chunk
+         });
+       
+         res.on('end', () => {
+           response.status(200).json(JSON.parse(data));
+           // console.log(JSON.parse(data))
+         })
+       }).on('error', error => {
+         console.error(error)
+       })
+       
+       reqt.end();
+     } catch (err) {
+       res.status(500).json(err);
+     }
+   });
+ 
+ 
+   app.get('/search-suggestions', async (req, res) => {
+     const term = req.query.term;
+     // const suggestions = await NewProductModel.find({ name: new RegExp(term, 'i') }).limit(10);
+     const suggestions = await NewProductModel.find({$or: [
+       { productName: new RegExp(term, 'i')},
+       { brandName: new RegExp(term, 'i')},
+       { category: new RegExp(term, 'i')},
+       { subCategory: new RegExp(term, 'i')}
+     ]}).limit(10)
+     res.json(suggestions);
+   });
+ 
+ 
+   app.post("/categorylookups/new", (req, res) => {
+     try {
+           const categr = Categories
+           CategoryLookUpModel.insertMany(Categories, (err, data)=>{
+                if(err){
+                    res.status(500).send(err);
+                }else{
+                 res.status(201).send(data);
+                }
+           });
+        } catch (err) {
+          console.error(err);
+          res.status(500).send();
+        }
+   });
+ 
+   app.post("/itemsizelookups/new", (req, res) => {
+     try {
+           const categr = ItemSizeMockdata
+           ItemSizeModel.insertMany(categr, (err, data)=>{
+                if(err){
+                    res.status(500).send(err);
+                }else{
+                 res.status(201).send(data);
+                }
+           });
+        } catch (err) {
+          console.error(err);
+          res.status(500).send();
+        }
+   });
+ 
+   app.post("/orders/new", async (req, res)=>{
+     try {
+      const details = req.body;
+      const orders = details[0];
+      const basket = details[1];
+      const data = details[2];
+      const totalPrice = details[3];
+      
+      const name = orders.name;
+      const email = orders.email;
+      const paymentchanel = orders.paymentchanel;
+      const phone = orders.phone;
+      const order = {
+        id : orders.order.id, 
+        order_items : orders.order.orderitems
       }
-
-      let data = ''
-      var reqt = https.request(options, res => {
-        
-      
-        res.on('data', (chunk) => {
-          data += chunk
-        });
-      
-        res.on('end', () => {
-          response.status(200).json(JSON.parse(data));
-          // console.log(JSON.parse(data))
-        })
-      }).on('error', error => {
-        console.error(error)
-      })
-      
-      reqt.end();
-    } catch (err) {
-      res.status(500).json(err);
-    }
-  });
-
-
-  app.get('/search-suggestions', async (req, res) => {
-    const term = req.query.term;
-    // const suggestions = await NewProductModel.find({ name: new RegExp(term, 'i') }).limit(10);
-    const suggestions = await NewProductModel.find({$or: [
-      { productName: new RegExp(term, 'i')},
-      { brandName: new RegExp(term, 'i')},
-      { category: new RegExp(term, 'i')},
-      { subCategory: {$all: [ new RegExp(term, 'i') ]}}
-    ]}).limit(10)
-    res.json(suggestions);
-  });
-
-
-  app.post("/categorylookups/new", (req, res) => {
-    try {
-          const categr = Categories
-          CategoryLookUpModel.insertMany(Categories, (err, data)=>{
-               if(err){
-                   res.status(500).send(err);
-               }else{
-                res.status(201).send(data);
-               }
-          });
+      //  console.log('\ndetails: ', order['order_items'])  
+         // save a new product to the db
+     
+         const newOrder = new OrderDetails({
+           name,
+           email,
+           phone,
+           paymentchanel,
+           order,
+         });
+ 
+         const transporter = nodemailer.createTransport({
+           service: 'gmail',
+           secure: true,
+           auth: {
+               user: 'nanayawamefia98@gmail.com',
+               pass: 'fauyaispedkdowri'
+           }
+       })
+       
+       
+    
+       const message = {
+           from: 'Caspianoutlets <noreply.nanayawamefia98@gmail.com>',
+           subject: 'Order receipt',
+           to: 'nanayawamefia98@gmail.com',
+           html: html(basket, data, totalPrice)
+       }
+ 
+         OrderDetails.create(newOrder, (err, data)=>{
+              if(err){
+                  res.status(500).send(err);
+              }else{
+               transporter.sendMail(message, (err, info)=>{
+                 if (err){
+                     console.log(err);
+                 }
+                 console.log(info)
+             })
+                  res.status(201).send(data);
+              }
+         });
+ 
+         
        } catch (err) {
          console.error(err);
          res.status(500).send();
        }
-  });
-
-  app.post("/orders/new", async (req, res)=>{
+   });
+ 
+  app.post('/feedbacks', async(req, res)=>{
+    let { name, comment } = req.body;
     try {
-        const name = req.body.name;
-        const email = req.body.email;
-        const paymentchanel = req.body.paymentchanel;
-        const phone = req.body.phone;
-        const order = {
-          id : req.body.order.id, 
-          order_items : req.body.order.orderitems
-        }
-        
-        // save a new product to the db
-    
-        const newOrder = new OrderDetails({
-          name,
-          email,
-          phone,
-          paymentchanel,
-          order,
-        });
+      const feedbacks = new feedbackModel({name, comment})
+       await feedbackModel.create(feedbacks)
+      res.status(200).send({message:'Feedback received successfully! Thank you, '})
+    }catch(err){
+      res.status(500).send(err);
+    }
+  })
 
-        const transporter = nodemailer.createTransport({
-          service: 'gmail',
-          secure: true,
-          auth: {
-              user: 'nanayawamefia98@gmail.com',
-              pass: 'fauyaispedkdowri'
-          }
-      })
-      
-      
-      
-      const message = {
-          from: 'Caspianoutlets <noreply.nanayawamefia98@gmail.com>',
-          subject: 'Order receipt',
-          to: email,
-          text: "<b>Hello world?</b>"
-      }
+  app.get('/feedbacks', async(req, res)=>{
+    try {
+      const feedbacks = await feedbackModel.find({})
+      res.status(200).send(feedbacks);
+    }catch(err){
+      res.status(500).send(err);
+    }
+  })
 
-        OrderDetails.create(newOrder, (err, data)=>{
-             if(err){
-                 res.status(500).send(err);
-             }else{
-              transporter.sendMail(message, (err, info)=>{
-                if (err){
-                    console.log(err);
-                }
-            })
-                 res.status(201).send(data);
-             }
-        });
 
-        
-      } catch (err) {
-        console.error(err);
-        res.status(500).send();
-      }
-  });
-
-  app.listen(port, () => console.log(`Listening on lacalhost:${port}`));
+   app.listen(port, () => console.log(`Listening on lacalhost:${port}`));

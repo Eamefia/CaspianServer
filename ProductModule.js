@@ -7,7 +7,7 @@ const ProductSchema = mongoose.Schema({
     salePrice:String,
     brandName:String,
     category:String,
-    subCategory:[],
+    subCategory: String,
     discription: String,
     fileName: String,
     date: { type: Date, default: Date.now },
