@@ -250,7 +250,7 @@ const HTML=(basket, addressdata, totalPrice, deliveryfee)=>{
         <td style="padding: 4px"><img src="https://caspianshops.netlify.app/${product['image']}" alt="img" height="50" width="50"/></td>
         <td style="padding: 4px">${product['title']}</td>
         <td style="padding: 4px">${product['quantity']}</td>
-        <td style="padding: 4px">${product['price']}</td>
+        <td style="padding: 4px">GHS${product['price']}</td>
     </tr>
     `    
     )}
@@ -258,7 +258,7 @@ const HTML=(basket, addressdata, totalPrice, deliveryfee)=>{
     </table></div></div></div></td></tr><tr><td style="padding:0"><div style="padding-top:4px;padding-bottom:4px;padding-right:4px;padding-left:4px;margin-bottom:0;margin-top:0;margin-right:0;margin-left:0"><div style="width:100%"><div><div style="border: 1px solid gray;">
     <div style="display:flex; width:100%; padding:8px 8px 8px 4px">
     <p style="margin:0; font-weight:bold; width:90%">DELIVERY FEES</p>
-    <p style="margin:0; color:gray">${deliveryfee}</p>
+    <p style="margin:0; color:gray">GHS${deliveryfee}</p>
     </div>
     <div style="display:flex; width:100%; padding:8px 8px 8px 4px">
     <p style="margin:0; font-weight:bold; width:90%">DISCOUNT ON DELIVERY</p>
@@ -270,7 +270,7 @@ const HTML=(basket, addressdata, totalPrice, deliveryfee)=>{
     </div>
     <div style="display:flex; width:100%; padding:8px 8px 8px 4px">
     <p style="margin:0; font-weight:bold; width:90%">TOTAL</p>
-    <p style="margin:0; color:gray">${totalPrice}</p>
+    <p style="margin:0; color:gray">GHS${totalPrice}</p>
     </div>
     <div style="display:flex; width:100%; padding:8px 8px 8px 4px">
     <p style="margin:0; font-weight:bold; width:90%">PAYMENT METHOD</p>
