@@ -23,6 +23,8 @@ import nodemailer from "nodemailer";
 import ItemSizeMockdata from "./ItemSizeMockdata.js";
 import feedbackModel from "./models/feedbackModel.js";
 import html from "./html.js";
+import { Locationdata, DeliveryLookups } from "./LocationsMockData.js";
+import DeliveryConstants from "./DeliveryConstants.js";
 
 dotenv.config();
 const app = express();
@@ -43,7 +45,8 @@ const storage = multer.diskStorage({
 //  middlewares
 app.use(express.json());
 app.use(cors({
-    origin: "https://caspianshops.netlify.app",
+    // origin: ["http://localhost:3000"],
+    origin: ['http://192.168.43.42:3000', "http://localhost:3000"],
     credentials: true
 }));
 
@@ -577,6 +580,7 @@ app.post('/signup/new',  async (req, res)=> {
       const token = jwt.sign(
         {
           user: savedUser.unique_id,
+          number: savedUser.telnumber,
         },
         process.env.JWT_SECRET
       );
@@ -603,6 +607,7 @@ app.post('/signup/new',  async (req, res)=> {
  app.post("/login", async (req, res) => {
    try {
      const { telnumber, password } = req.body;
+     const email = telnumber;
  
      // validate
  
@@ -611,7 +616,7 @@ app.post('/signup/new',  async (req, res)=> {
          .status(400)
          .json({ errorMessage: "Please enter all required fields." });
  
-     const existingUser = await User.findOne({ telnumber });
+     const existingUser = await User.findOne({ $or: [{telnumber:telnumber}, {email:email}] });
      if (!existingUser)
        return res.status(401).json({ errorMessage: "Wrong email or password." });
  
@@ -624,7 +629,9 @@ app.post('/signup/new',  async (req, res)=> {
      const token = jwt.sign(
        {
          user: existingUser.unique_id,
+         number: existingUser.telnumber,
        },
+
        process.env.JWT_SECRET
      );
  
@@ -769,7 +776,8 @@ app.get("/logout", (req, res) => {
          path: `/transaction/verify/${req.params.ref}`,
          method: 'GET',
          headers: {
-           Authorization: 'Bearer sk_test_da294b7771bace620ec64176e31f2193d3e89b96'
+          //  Authorization: 'Bearer sk_test_da294b7771bace620ec64176e31f2193d3e89b96'
+          Authorization: 'Bearer sk_live_92fc083a35626389579b35c6586e93f9d582d446'
          }
        }
  
@@ -848,7 +856,7 @@ app.get("/logout", (req, res) => {
       const basket = details[1];
       const data = details[2];
       const totalPrice = details[3];
-      const deliveryfee = details[4].toFixed(2);
+      const deliveryfee = details[4];
       
       const name = orders.name;
       const email = orders.email;
@@ -858,7 +866,6 @@ app.get("/logout", (req, res) => {
         id : orders.order.id, 
         order_items : orders.order.orderitems
       }
-      //  console.log('\ndetails: ', order['order_items'])  
          // save a new product to the db
      
          const newOrder = new OrderDetails({
@@ -909,11 +916,11 @@ app.get("/logout", (req, res) => {
    });
  
   app.post('/feedbacks', async(req, res)=>{
-    let { name, comment } = req.body;
+    let likes = req.body.likes;
     try {
-      const feedbacks = new feedbackModel({name, comment})
-       await feedbackModel.create(feedbacks)
-      res.status(200).send({message:'Feedback received successfully! Thank you, '})
+      const feedbacks = new feedbackModel({likes});
+      await feedbackModel.create(feedbacks)
+      res.status(200).send({message:'Feedback received successfully! Thank you...'})
     }catch(err){
       res.status(500).send(err);
     }
@@ -926,7 +933,43 @@ app.get("/logout", (req, res) => {
     }catch(err){
       res.status(500).send(err);
     }
-  })
+  });
+
+  app.post("/deliveryconstants/new", async (req, res)=>{
+    try {
+
+        DeliveryConstants.insertMany(DeliveryLookups, (err, data)=>{
+             if(err){
+                 res.status(500).send(err);
+             }else{
+                 res.status(201).send(data);
+             }
+        });
+
+       
+      } catch (err) {
+        console.error(err);
+        res.status(500).send();
+      }
+  });
+
+  app.get("/deliveryconstants", async (req, res)=>{
+    try {
+
+        DeliveryConstants.find({}, (err, data)=>{
+             if(err){
+                 res.status(500).send(err);
+             }else{
+                 res.status(201).send(data);
+             }
+        });
+
+       
+      } catch (err) {
+        console.error(err);
+        res.status(500).send();
+      }
+  });
 
 
    app.listen(port, () => console.log(`Listening on lacalhost:${port}`));
